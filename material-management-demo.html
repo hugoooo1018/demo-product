@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>素材管理模块 Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10B981',
+                        secondary: '#F3F4F6',
+                        dark: '#1F2937',
+                        light: '#F9FAFB',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-all-300 {
+                transition: all 300ms ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex flex-col h-screen">
+        <!-- 顶部导航栏 -->
+        <header class="bg-white shadow-sm px-4 py-3">
+            <div class="flex items-center space-x-2 mb-3">
+                <button id="search-toggle" class="bg-primary text-white px-3 py-1 rounded flex items-center space-x-1">
+                    <i class="fa fa-filter"></i>
+                    <span>所有搜索条件</span>
+                </button>
+                <div class="flex items-center border rounded">
+                    <span class="px-3 py-1 bg-gray-100 border-r">素材</span>
+                    <input type="text" id="material-search" placeholder="请输入素材名称" class="px-3 py-1 focus:outline-none">
+                </div>
+                <button class="bg-primary text-white px-3 py-1 rounded ml-2">
+                    <i class="fa fa-search"></i> 查询
+                </button>
+                <button class="border border-gray-300 text-gray-600 px-3 py-1 rounded ml-2">
+                    清空
+                </button>
+            </div>
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="relative">
+                        <button id="upload-button" class="bg-primary text-white px-3 py-1 rounded flex items-center space-x-1">
+                            <i class="fa fa-upload"></i>
+                            <span>上传素材</span>
+                            <i class="fa fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="upload-menu" class="absolute left-0 top-full mt-1 bg-white shadow-lg rounded border w-48 hidden z-10">
+                            <ul>
+                                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">上传文件夹</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="border border-gray-300 text-gray-600 px-3 py-1 rounded flex items-center space-x-1">
+                        <i class="fa fa-refresh"></i>
+                        <span>同步媒体素材</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 搜索条件面板 -->
+        <div id="search-panel" class="bg-white shadow-sm px-4 py-3 hidden">
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">素材类型</label>
+                    <select class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">请选择</option>
+                        <option value="image">图片</option>
+                        <option value="video">视频</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">产品</label>
+                    <select class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">请搜索或选择产品</option>
+                        <option value="product1">产品1</option>
+                        <option value="product2">产品2</option>
+                        <option value="product3">产品3</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">创建时间</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="date" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <span>-</span>
+                        <input type="date" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end mt-4 space-x-2">
+                <button id="search-collapse" class="border border-gray-300 text-gray-600 px-3 py-1 rounded">
+                    收起
+                </button>
+                <button class="bg-primary text-white px-3 py-1 rounded">
+                    确认
+                </button>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- 左侧文件夹导航 -->
+            <aside class="w-64 bg-white shadow-sm overflow-y-auto">
+                <div class="p-4">
+                    <div class="relative">
+                        <input type="text" id="folder-search" placeholder="搜索文件夹名称" class="w-full border rounded px-3 py-2 pl-8 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                <nav class="px-2 py-2">
+                    <div class="mb-2">
+                        <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                            <i class="fa fa-bookmark text-blue-500 mr-2"></i>
+                            <span>我的收藏</span>
+                        </a>
+                    </div>
+                    <div class="mb-2">
+                        <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                            <i class="fa fa-folder-open text-gray-500 mr-2"></i>
+                            <span>默认收藏夹（全部门可见）</span>
+                        </a>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex items-center px-3 py-2 rounded hover:bg-gray-100 cursor-pointer folder-toggle">
+                            <i class="fa fa-folder text-green-600 mr-2"></i>
+                            <span>素材库</span>
+                            <i class="fa fa-chevron-down ml-auto text-xs"></i>
+                        </div>
+                        <div class="pl-6 mt-1 folder-content">
+                            <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                                <i class="fa fa-folder text-green-600 mr-2"></i>
+                                <span>未分组素材</span>
+                            </a>
+                            <div class="flex items-center px-3 py-2 rounded hover:bg-gray-100 cursor-pointer folder-toggle">
+                                <i class="fa fa-folder text-green-600 mr-2"></i>
+                                <span>SY</span>
+                                <i class="fa fa-chevron-down ml-auto text-xs"></i>
+                            </div>
+                            <div class="pl-6 mt-1 folder-content">
+                                <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                                    <i class="fa fa-folder text-green-600 mr-2"></i>
+                                    <span>日常品类精品广告</span>
+                                </a>
+                                <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                                    <i class="fa fa-folder text-green-600 mr-2"></i>
+                                    <span>BFCM</span>
+                                </a>
+                                <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                                    <i class="fa fa-folder text-green-600 mr-2"></i>
+                                    <span>Criassa</span>
+                                </a>
+                                <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                                    <i class="fa fa-folder text-green-600 mr-2"></i>
+                                    <span>Yves</span>
+                                </a>
+                            </div>
+                            <a href="#" class="flex items-center px-3 py-2 rounded hover:bg-gray-100">
+                                <i class="fa fa-folder text-green-600 mr-2"></i>
+                                <span>06_COZY 1/4 Zip</span>
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- 右侧内容区 -->
+            <main class="flex-1 overflow-y-auto bg-gray-50 p-4">
+                <!-- 操作栏 -->
+                <div class="bg-white p-3 rounded shadow-sm mb-4">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <button class="border border-gray-300 text-gray-600 px-3 py-1 rounded">
+                                新建文件夹
+                            </button>
+                            <button class="border border-gray-300 text-gray-600 px-3 py-1 rounded">
+                                上传素材到媒体库
+                            </button>
+                            <div class="relative">
+                                <button id="batch-operation" class="border border-gray-300 text-gray-600 px-3 py-1 rounded flex items-center space-x-1">
+                                    <span>批量操作</span>
+                                    <i class="fa fa-chevron-down text-xs"></i>
+                                </button>
+                                <div id="batch-menu" class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded border w-48 hidden z-10">
+                                    <ul>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">移动</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">删除</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">下载</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">修改产品归属</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">收藏</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <button class="border border-gray-300 text-gray-600 px-3 py-1 rounded flex items-center space-x-1">
+                                <input type="checkbox" class="mr-1">
+                                <span>全选当前页</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="relative">
+                                <button id="sort-button" class="border border-gray-300 text-gray-600 px-3 py-1 rounded flex items-center space-x-1">
+                                    <span>按创建时间从新到旧排序</span>
+                                    <i class="fa fa-chevron-down text-xs"></i>
+                                </button>
+                                <div id="sort-menu" class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded border w-48 hidden z-10">
+                                    <ul>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">按创建时间从新到旧排序</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">按创建时间从旧到新排序</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">按素材数量从多到少排序</a></li>
+                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">按素材数量从少到多排序</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="flex border border-gray-300 rounded overflow-hidden">
+                                <button class="px-3 py-1 bg-gray-100"><i class="fa fa-th-large"></i></button>
+                                <button class="px-3 py-1"><i class="fa fa-list"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 素材展示区 -->
+                <div class="bg-white rounded shadow-sm p-4">
+                    <div class="grid grid-cols-5 gap-4">
+                        <!-- 文件夹卡片 -->
+                        <div class="border rounded p-4 text-center hover:shadow-md transition-all-300">
+                            <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-2">
+                                <i class="fa fa-folder text-4xl text-green-600"></i>
+                            </div>
+                            <h3 class="font-medium mb-1">未分组素材</h3>
+                            <div class="text-sm text-gray-500 mb-2">
+                                <span>0 张图片</span>
+                                <span class="mx-2">|</span>
+                                <span>0 个视频</span>
+                            </div>
+                            <div class="flex justify-center space-x-2">
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-image-o text-gray-500"></i>
+                                </div>
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-video-o text-gray-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border rounded p-4 text-center hover:shadow-md transition-all-300">
+                            <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-2">
+                                <i class="fa fa-folder text-4xl text-green-600"></i>
+                            </div>
+                            <h3 class="font-medium mb-1">BFCM</h3>
+                            <div class="text-sm text-gray-500 mb-2">
+                                <span>4 张图片</span>
+                                <span class="mx-2">|</span>
+                                <span>5 个视频</span>
+                            </div>
+                            <div class="flex justify-center space-x-2">
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-image-o text-gray-500"></i>
+                                </div>
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-video-o text-gray-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border rounded p-4 text-center hover:shadow-md transition-all-300">
+                            <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-2">
+                                <i class="fa fa-folder text-4xl text-green-600"></i>
+                            </div>
+                            <h3 class="font-medium mb-1">Criassa</h3>
+                            <div class="text-sm text-gray-500 mb-2">
+                                <span>0 张图片</span>
+                                <span class="mx-2">|</span>
+                                <span>8 个视频</span>
+                            </div>
+                            <div class="flex justify-center space-x-2">
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-image-o text-gray-500"></i>
+                                </div>
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-video-o text-gray-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border rounded p-4 text-center hover:shadow-md transition-all-300">
+                            <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-2">
+                                <i class="fa fa-folder text-4xl text-green-600"></i>
+                            </div>
+                            <h3 class="font-medium mb-1">Yves</h3>
+                            <div class="text-sm text-gray-500 mb-2">
+                                <span>0 张图片</span>
+                                <span class="mx-2">|</span>
+                                <span>1 个视频</span>
+                            </div>
+                            <div class="flex justify-center space-x-2">
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-image-o text-gray-500"></i>
+                                </div>
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-video-o text-gray-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border rounded p-4 text-center hover:shadow-md transition-all-300">
+                            <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-2">
+                                <i class="fa fa-folder text-4xl text-green-600"></i>
+                            </div>
+                            <h3 class="font-medium mb-1">06_COZY 1/4 Zip</h3>
+                            <div class="text-sm text-gray-500 mb-2">
+                                <span>63 张图片</span>
+                                <span class="mx-2">|</span>
+                                <span>0 个视频</span>
+                            </div>
+                            <div class="flex justify-center space-x-2">
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-image-o text-gray-500"></i>
+                                </div>
+                                <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fa fa-file-video-o text-gray-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // 搜索条件面板切换
+        document.getElementById('search-toggle').addEventListener('click', function() {
+            const searchPanel = document.getElementById('search-panel');
+            searchPanel.classList.toggle('hidden');
+        });
+
+        // 收起搜索条件面板
+        document.getElementById('search-collapse').addEventListener('click', function() {
+            const searchPanel = document.getElementById('search-panel');
+            searchPanel.classList.add('hidden');
+        });
+
+        // 文件夹搜索功能
+        document.getElementById('folder-search').addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            const nav = document.querySelector('nav');
+            
+            // 首先隐藏所有导航项
+            nav.querySelectorAll('div, a').forEach(item => {
+                item.classList.add('hidden');
+            });
+            
+            if (searchTerm === '') {
+                // 如果搜索词为空，显示所有导航项
+                nav.querySelectorAll('div, a').forEach(item => {
+                    item.classList.remove('hidden');
+                });
+                return;
+            }
+            
+            // 搜索所有包含fa-folder图标的元素
+            const folderItems = nav.querySelectorAll('.fa-folder');
+            folderItems.forEach(icon => {
+                const folderItem = icon.closest('div, a');
+                const folderNameElement = folderItem.querySelector('span');
+                if (folderNameElement) {
+                    const folderName = folderNameElement.textContent.trim();
+                    
+                    // 精准匹配
+                    if (folderName === searchTerm) {
+                        // 显示匹配的文件夹及其所有父级
+                        let currentItem = folderItem;
+                        while (currentItem && currentItem !== nav) {
+                            currentItem.classList.remove('hidden');
+                            currentItem = currentItem.parentElement;
+                        }
+                    }
+                }
+            });
+        });
+
+        // 顶部素材搜索功能（模糊搜索）
+        document.getElementById('material-search').addEventListener('input', function() {
+            const searchTerm = this.value.trim().toLowerCase();
+            const allCards = document.querySelectorAll('.border');
+            
+            allCards.forEach(card => {
+                if (card.querySelector('.fa-folder')) {
+                    const folderName = card.querySelector('h3').textContent.trim().toLowerCase();
+                    
+                    if (searchTerm === '' || folderName.includes(searchTerm)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // 文件夹展开/折叠
+        document.querySelectorAll('.folder-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const content = this.nextElementSibling;
+                const icon = this.querySelector('.fa-chevron-down');
+                content.classList.toggle('hidden');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-right');
+            });
+        });
+
+        // 批量操作下拉菜单
+        document.getElementById('batch-operation').addEventListener('click', function() {
+            const batchMenu = document.getElementById('batch-menu');
+            batchMenu.classList.toggle('hidden');
+        });
+
+        // 排序下拉菜单
+        document.getElementById('sort-button').addEventListener('click', function() {
+            const sortMenu = document.getElementById('sort-menu');
+            sortMenu.classList.toggle('hidden');
+        });
+
+        // 上传素材下拉菜单
+        document.getElementById('upload-button').addEventListener('click', function() {
+            const uploadMenu = document.getElementById('upload-menu');
+            uploadMenu.classList.toggle('hidden');
+        });
+
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            const batchOperation = document.getElementById('batch-operation');
+            const batchMenu = document.getElementById('batch-menu');
+            const sortButton = document.getElementById('sort-button');
+            const sortMenu = document.getElementById('sort-menu');
+            const uploadButton = document.getElementById('upload-button');
+            const uploadMenu = document.getElementById('upload-menu');
+
+            if (!batchOperation.contains(event.target) && !batchMenu.contains(event.target)) {
+                batchMenu.classList.add('hidden');
+            }
+
+            if (!sortButton.contains(event.target) && !sortMenu.contains(event.target)) {
+                sortMenu.classList.add('hidden');
+            }
+
+            if (!uploadButton.contains(event.target) && !uploadMenu.contains(event.target)) {
+                uploadMenu.classList.add('hidden');
+            }
+        });
+
+        // 上传文件夹选项点击事件
+        document.querySelectorAll('#upload-menu a').forEach(link => {
+            if (link.textContent.includes('上传文件夹')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('上传文件夹功能演示');
+                });
+            }
+        });
+
+        // 同步媒体素材按钮点击事件
+        document.querySelectorAll('button').forEach(button => {
+            if (button.querySelector('.fa-refresh')) {
+                button.addEventListener('click', function() {
+                    alert('同步媒体素材功能演示');
+                });
+            }
+        });
+
+        // 新建文件夹按钮点击事件
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('新建文件夹')) {
+                button.addEventListener('click', function() {
+                    const folderName = prompt('请输入文件夹名称：');
+                    if (folderName) {
+                        alert(`新建文件夹：${folderName}`);
+                    }
+                });
+            }
+        });
+
+        // 上传素材到媒体库按钮点击事件
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('上传素材到媒体库')) {
+                button.addEventListener('click', function() {
+                    alert('上传素材到媒体库功能演示');
+                });
+            }
+        });
+
+        // 全选当前页按钮点击事件
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('全选当前页')) {
+                button.addEventListener('click', function() {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    alert(checkbox.checked ? '已全选当前页素材' : '已取消全选');
+                });
+            }
+        });
+
+        // 列表/网格视图切换
+        document.querySelectorAll('.border').forEach(button => {
+            if (button.querySelector('.fa-th-large') || button.querySelector('.fa-list')) {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.border').forEach(btn => {
+                        if (btn.querySelector('.fa-th-large') || btn.querySelector('.fa-list')) {
+                            btn.classList.remove('bg-gray-100');
+                        }
+                    });
+                    this.classList.add('bg-gray-100');
+                    alert(`已切换到${this.querySelector('.fa-th-large') ? '网格' : '列表'}视图`);
+                });
+            }
+        });
+
+        // 文件夹卡片点击事件
+        document.querySelectorAll('.border').forEach(card => {
+            if (card.querySelector('.fa-folder')) {
+                card.addEventListener('click', function() {
+                    const folderName = this.querySelector('h3').textContent;
+                    alert(`打开文件夹：${folderName}`);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
